@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/sh
+#!/data/data/com.termux/files/usr/bin/bash
 # 构建适用于 Termux (aarch64) 的 ClaudeChatManager
 # 依赖: pkg install dotnet-sdk-10.0
 #
