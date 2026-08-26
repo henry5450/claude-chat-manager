@@ -54,3 +54,7 @@ To publish a compiled native AOT binary:
 ```bash
 dotnet publish ClaudeChatManager -c Release
 ```
+
+```bash
+./build-termux.sh
+```
