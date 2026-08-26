@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ClaudeChatManager;
 
@@ -108,10 +109,7 @@ public static class ChatScanner
 	{
 		// content can be a string or an array of content blocks
 		if (content.ValueKind == JsonValueKind.String)
-		{
-			var s = content.GetString() ?? "";
-			return s.TrimStart().StartsWith('<') ? "" : s;
-		}
+			return ExtractDisplayText(content.GetString() ?? "");
 
 		if (content.ValueKind == JsonValueKind.Array)
 		{
@@ -120,13 +118,27 @@ public static class ChatScanner
 				if (block.TryGetProperty("type", out var type) && type.GetString() == "text"
 					&& block.TryGetProperty("text", out var text))
 				{
-					var s = text.GetString() ?? "";
-					// skip system-injected content blocks (e.g. <ide_selection>, <system-reminder>)
-					if (!string.IsNullOrWhiteSpace(s) && !s.TrimStart().StartsWith('<'))
+					var s = ExtractDisplayText(text.GetString() ?? "");
+					if (s != "")
 						return s;
 				}
 			}
 		}
+
+		return "";
+	}
+
+	private static string ExtractDisplayText(string s)
+	{
+		// plain text is used as-is
+		if (!s.TrimStart().StartsWith('<'))
+			return s;
+
+		// XML-wrapped content: only local commands (e.g. "/exit") are user-initiated,
+		// everything else is system-injected (<system-reminder>, <ide_selection>, etc.)
+		var match = Regex.Match(s, @"<command-name>\s*(.*?)\s*</command-name>", RegexOptions.Singleline);
+		if (match.Success && !string.IsNullOrWhiteSpace(match.Groups[1].Value))
+			return match.Groups[1].Value.Trim();
 
 		return "";
 	}
