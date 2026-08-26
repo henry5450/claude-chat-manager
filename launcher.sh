@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ClaudeChatManager Termux 自解压启动器
 # 首次运行把内嵌的发布目录解压到缓存, 之后直接启动
-VERSION="1.0.1"
+VERSION="1.0.2"
 EXTRACT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-chat-manager"
 MARKER="$EXTRACT_DIR/.v$VERSION.ok"
 
