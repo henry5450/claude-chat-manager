@@ -20,6 +20,9 @@ public class JsonlMessage
 
 	[JsonPropertyName("slug")]
 	public string? Slug { get; set; }
+
+	[JsonPropertyName("cwd")]
+	public string? Cwd { get; set; }
 }
 
 public class MessageContent

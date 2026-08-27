@@ -16,15 +16,58 @@ public static class ChatScanner
 			return [];
 
 		return Directory.GetDirectories(ProjectsDir)
-			.Select(dir =>
-			{
-				var folderName = Path.GetFileName(dir);
-				// folder name is the path with dashes instead of slashes: -Users-jazz-project
-				var projectPath = "/" + folderName.TrimStart('-').Replace('-', '/');
-				return new ProjectInfo(projectPath, dir);
-			})
+			.Select(dir => new ProjectInfo(GetProjectPath(dir), dir))
 			.OrderBy(p => p.Name)
 			.ToList();
+	}
+
+	private static string GetProjectPath(string projectDir)
+	{
+		// the folder name is lossy ("-" can be a slash or a real dash), so prefer
+		// the real path stored in the "cwd" field of the conversation messages
+		foreach (var file in Directory.GetFiles(projectDir, "*.jsonl"))
+		{
+			try
+			{
+				foreach (var line in File.ReadLines(file).Take(50))
+				{
+					if (string.IsNullOrWhiteSpace(line)) continue;
+					try
+					{
+						var msg = JsonSerializer.Deserialize(line, AppJsonContext.Default.JsonlMessage);
+						if (!string.IsNullOrEmpty(msg?.Cwd))
+							return msg.Cwd;
+					}
+					catch
+					{
+						// skip unparseable lines
+					}
+				}
+			}
+			catch
+			{
+				// skip unreadable files
+			}
+		}
+
+		// fallback: decode the folder name (dashes may be slashes or real dashes).
+		// verify against the disk: greedily turn trailing slashes back into dashes
+		// until we find a path that actually exists
+		var folderName = Path.GetFileName(projectDir);
+		var decoded = "/" + folderName.TrimStart('-').Replace('-', '/');
+
+		var candidate = decoded;
+		while (candidate.Contains('/'))
+		{
+			if (Directory.Exists(candidate))
+				return candidate;
+			var idx = candidate.LastIndexOf('/');
+			candidate = candidate[..idx] + "-" + candidate[(idx + 1)..];
+		}
+		if (Directory.Exists(candidate))
+			return candidate;
+
+		return decoded;
 	}
 
 	public static List<ConversationInfo> GetConversations(string projectDir)
