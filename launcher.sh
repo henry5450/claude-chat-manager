@@ -1,18 +1,17 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.termux/files/usr/bin/sh
 # ClaudeChatManager Termux 自解压启动器
 # 首次运行把内嵌的发布目录解压到缓存, 之后直接启动
-VERSION="1.0.2"
+# 注意: PAYLOAD_OFFSET 是构建时写入的等宽占位符, 由 build-termux.sh 计算并替换,
+# 运行时只需 tail + tar, 不依赖 grep/awk/sed 等工具变体
+VERSION="1.0.3"
 EXTRACT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-chat-manager"
 MARKER="$EXTRACT_DIR/.v$VERSION.ok"
+PAYLOAD_OFFSET=0000000000
 
 if [ ! -f "$MARKER" ]; then
     rm -rf "$EXTRACT_DIR"
     mkdir -p "$EXTRACT_DIR" || exit 1
-    # 定位本文件中的 payload (标记行之后的所有字节)
-    OFFSET=$(grep -abo "^__PAYLOAD__$" "$0" 2>/dev/null | head -1 | cut -d: -f1)
-    [ -n "$OFFSET" ] || exit 1
-    OFFSET=$((OFFSET + 13))
-    tail -c +"$OFFSET" "$0" | tar xz -C "$EXTRACT_DIR" || exit 1
+    tail -c +"$PAYLOAD_OFFSET" "$0" | tar xz -C "$EXTRACT_DIR" || exit 1
     touch "$MARKER" || exit 1
 fi
 

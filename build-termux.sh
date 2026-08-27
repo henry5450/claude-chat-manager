@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.termux/files/usr/bin/sh
 # 构建适用于 Termux (aarch64) 的 ClaudeChatManager
 # 依赖: pkg install dotnet-sdk-10.0
 #
@@ -28,7 +28,13 @@ rm -f dist/*.a dist/*.pdb
 tar czf claude-chat-manager-termux-aarch64.tar.gz -C dist .
 
 # 3. 拼接自解压单文件
-cat launcher.sh claude-chat-manager-termux-aarch64.tar.gz > ClaudeChatManager-termux
+# payload 起始偏移 = launcher 字节数 + 1 (等宽替换占位符, 替换前后脚本长度不变)
+LEN=$(wc -c < launcher.sh)
+OFFSET=$((LEN + 1))
+OFFSET_STR=$(printf '%010d' "$OFFSET")
+sed "s/^PAYLOAD_OFFSET=0000000000$/PAYLOAD_OFFSET=$OFFSET_STR/" launcher.sh > .launcher-gen.sh
+cat .launcher-gen.sh claude-chat-manager-termux-aarch64.tar.gz > ClaudeChatManager-termux
+rm -f .launcher-gen.sh
 chmod +x ClaudeChatManager-termux
 
 echo "构建完成:"
